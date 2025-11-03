@@ -1,15 +1,24 @@
 # TEAM13-ML-HACKTHON
 ANALYSIS AND REPORT:
+
 KEY OBSERVATIONS
+
 Most Challenging Parts
+
 State Representation: The most significant challenge was designing a fixed-size state vector for the RL agent. A Hangman state is complex: word lengths vary, and the pattern of known and unknown letters is not easily encoded.
+
 Improving HMM: The challenge was designing an RL agent that could meaningfully improve upon this baseline rather than just matching or degrading its performance.
+
 Insights Gained:
+
 Hybrid Approach is Key: The most valuable insight is that a hybrid approach is superior. The RL agent's strength is not in learning the entire game, but in learning a policy correction for the HMM. By feeding the HMM's probabilities into the DQN, the agent learns to identify and correct for tricky situations where the HMM's most frequent guess is not the optimal one
+
 Performance: The evaluation confirms the success of this "Conservative DQN" approach. The final agent achieved a 97.90% win rate on the test set, with an average of only 1.32 wrong guesses per game, demonstrating a clear ability to minimize mistakes.
 
 STRATEGIES
+
 RL State and Reward Design
+
 RL State Design: The StateEncoder creates an 81-dimension state vector to feed into the DQN:
 Game Info (2 dims): Normalized word length, normalized lives remaining (6 - wrong guesses).
 Guesses (26 dims): A 26-dimension binary vector indicating which letters have been guessed.
@@ -23,16 +32,26 @@ Wrong Guess: -100 (a significant penalty, up from -25).
 Repeated Guess: -50 (also heavily penalized, up from -10).
 
 WHY DID WE CHOOSE THIS DESIGN?
+
 The goal was explicitly to minimize wrong guesses. The standard -25 reward for a wrong guess is not severe enough. By training on a much harsher penalty (-100), the agent learns to avoid mistakes and repeated guesses at all costs, prioritizing high-certainty guesses.
 
+
 EXPLORATION VS EXPLOITATION
+
 The agent manages this trade-off using a HMM-weighted Epsilon-Greedy strategy:
 Epsilon-Greedy: The agent uses a standard epsilon-greedy approach, where epsilon (ε) starts at 0.2 and decays to 0.01. During training, if a random number is less than ε, the agent chooses to explore.
+
 Smart Exploration: When exploring, the agent does not pick a random letter from all 26. This would be inefficient ('X', 'Q', 'Z' are almost always wrong). Instead, it performs weighted sampling using the probabilities from the HMM.
+
 Exploitation: When exploiting (i.e., not exploring), the agent selects the action with the highest "blended score," which is a weighted average: 70% HMM probability + 30% RL Q-value.
 
 FUTURE WORK:
+
 Expand the Corpus: The HMM's strength is based on its 50,000-word vocabulary. Using a much larger corpus (e.g., 300,000+ words) would dramatically improve the accuracy of its frequency analysis and candidate filtering, which is the foundation of the agent's performance.
+
 Implement a Better HMM: The current HMM is a positional frequency model. I would implement a true n-gram (bigram/trigram) model. For a pattern like T H _, an n-gram model would know 'E' is overwhelmingly likely, whereas the current model just looks at all 3-letter words with 'H' in the middle.
+Tune the Hybrid Weight: The hmm_weight of 0.7 was hard-coded. I would experiment with this hyperparameter to find the optimal balance between the HMM's knowledge and the RL's learned refinements.
+Upgrade the DQN Algorithm: The agent uses a standard DQN with a target network. I would upgrade this to a Double DQN (to reduce Q-value overestimation) or a Dueling DQN (to better distinguish the value of a state from the value of an action).
+
 Tune the Hybrid Weight: The hmm_weight of 0.7 was hard-coded. I would experiment with this hyperparameter to find the optimal balance between the HMM's knowledge and the RL's learned refinements.
 Upgrade the DQN Algorithm: The agent uses a standard DQN with a target network. I would upgrade this to a Double DQN (to reduce Q-value overestimation) or a Dueling DQN (to better distinguish the value of a state from the value of an action).
